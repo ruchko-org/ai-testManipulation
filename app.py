@@ -41,7 +41,8 @@ def normalize_questions(raw_questions):
 
     Поддерживает формат:
         {"id": int, "category": str, "question": str,
-         "options": [str, ...], "correct": int, "explanation": str}
+         "options": [str, ...], "correct": int, "explanation": str,
+         "option_explanations": [str, ...]}
     """
     cleaned = []
     for item in raw_questions:
@@ -51,6 +52,7 @@ def normalize_questions(raw_questions):
         options = item.get("options")
         correct = item.get("correct")
         explanation = item.get("explanation", "")
+        option_explanations = item.get("option_explanations")
 
         if not question or not isinstance(options, list):
             continue
@@ -58,6 +60,15 @@ def normalize_questions(raw_questions):
             continue
         if not isinstance(correct, int) or not (0 <= correct < len(options)):
             continue
+
+        # Разбор по вариантам валиден только если это список строк
+        # ровно по числу вариантов ответа.
+        if not (
+            isinstance(option_explanations, list)
+            and len(option_explanations) == len(options)
+            and all(isinstance(x, str) for x in option_explanations)
+        ):
+            option_explanations = None
 
         cleaned.append(
             {
@@ -67,6 +78,7 @@ def normalize_questions(raw_questions):
                 "options": list(options),
                 "correct": correct,
                 "explanation": explanation,
+                "option_explanations": option_explanations,
             }
         )
     return cleaned
@@ -207,6 +219,14 @@ def result():
     for a in answers:
         q = ALL_QUESTIONS[a["q_index"]]
         chosen = a.get("chosen", -1)
+        opt_expl = q.get("option_explanations")
+        chosen_expl = None
+        correct_expl = None
+        if opt_expl:
+            if isinstance(chosen, int) and 0 <= chosen < len(opt_expl):
+                chosen_expl = opt_expl[chosen]
+            if 0 <= q["correct"] < len(opt_expl):
+                correct_expl = opt_expl[q["correct"]]
         review.append(
             {
                 "question": q["question"],
@@ -219,6 +239,8 @@ def result():
                 ),
                 "correct_text": q["options"][q["correct"]],
                 "explanation": q["explanation"],
+                "chosen_explanation": chosen_expl,
+                "correct_explanation": correct_expl,
             }
         )
 
