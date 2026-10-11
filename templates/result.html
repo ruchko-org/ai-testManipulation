@@ -31,7 +31,13 @@
             <div class="review-item {% if item.is_correct %}review-correct{% else %}review-wrong{% endif %}">
                 <p class="review-question">{{ item.question }}</p>
                 <p><strong>Твой ответ:</strong> {{ item.chosen_text }}</p>
+                {% if not item.is_correct and item.chosen_explanation %}
+                    <p class="review-option-explanation">{{ item.chosen_explanation }}</p>
+                {% endif %}
                 <p><strong>Правильный ответ:</strong> {{ item.correct_text }}</p>
+                {% if item.correct_explanation %}
+                    <p class="review-option-explanation">{{ item.correct_explanation }}</p>
+                {% endif %}
                 <p class="review-explanation">{{ item.explanation }}</p>
             </div>
             {% endfor %}

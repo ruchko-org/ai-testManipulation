@@ -25,6 +25,20 @@
         <div class="explanation">
             <h3>Почему так?</h3>
             <p>{{ q.explanation }}</p>
+
+            {% if not is_correct and chosen_explanation %}
+                <div class="option-explanation wrong-option">
+                    <h4>Почему твой вариант неверен</h4>
+                    <p>{{ chosen_explanation }}</p>
+                </div>
+            {% endif %}
+
+            {% if correct_explanation %}
+                <div class="option-explanation correct-option">
+                    <h4>Почему правильный вариант верен</h4>
+                    <p>{{ correct_explanation }}</p>
+                </div>
+            {% endif %}
         </div>
 
         <form action="{{ url_for('next_question') }}" method="post">
