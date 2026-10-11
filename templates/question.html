@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вопрос {{ current }} из {{ total }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ (current / total * 100) | round }}%"></div>
+    </div>
+    <p class="progress-text">Вопрос {{ current }} из {{ total }}</p>
+
+    <div class="card">
+        <h2 class="question-text">{{ q.question }}</h2>
+
+        {% if error %}
+            <p class="warning">{{ error }}</p>
+        {% endif %}
+
+        <form action="{{ url_for('question') }}" method="post">
+            <div class="options">
+                {% for option in q.options %}
+                    <label class="option">
+                        <input type="radio" name="answer" value="{{ loop.index0 }}">
+                        <span class="option-text">{{ option }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary">Ответить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

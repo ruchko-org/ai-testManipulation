@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Квиз: распознай манипуляцию</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="card hero">
+        <h1>🧠 Квиз: распознай манипуляцию</h1>
+        <p class="lead">
+            Проверь, умеешь ли ты замечать скрытое давление, лесть, чувство вины,
+            срочность и другие манипулятивные приёмы.
+        </p>
+
+        <ul class="facts">
+            <li><strong>Всего вопросов в банке:</strong> {{ total_questions }}</li>
+            <li><strong>Вопросов за прохождение:</strong> {{ session_size }}</li>
+            <li><strong>Формат:</strong> один вопрос — четыре варианта ответа</li>
+            <li><strong>После каждого ответа:</strong> подробное объяснение</li>
+        </ul>
+
+        {% if total_questions == 0 %}
+            <p class="warning">
+                Банк вопросов пуст. Добавьте вопросы в файл <code>questions.py</code>.
+            </p>
+        {% else %}
+            <form action="{{ url_for('start') }}" method="post">
+                <button type="submit" class="btn btn-primary">Начать квиз</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ответ на вопрос {{ current }} из {{ total }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ (current / total * 100) | round }}%"></div>
+    </div>
+    <p class="progress-text">Вопрос {{ current }} из {{ total }}</p>
+
+    <div class="card {% if is_correct %}card-correct{% else %}card-wrong{% endif %}">
+        <h2 class="question-text">{{ q.question }}</h2>
+
+        {% if is_correct %}
+            <p class="result-banner correct">✅ Верно!</p>
+        {% else %}
+            <p class="result-banner wrong">❌ Неверно</p>
+        {% endif %}
+
+        <div class="explanation">
+            <h3>Почему так?</h3>
+            <p>{{ q.explanation }}</p>
+        </div>
+
+        <form action="{{ url_for('next_question') }}" method="post">
+            <button type="submit" class="btn btn-primary">Дальше →</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

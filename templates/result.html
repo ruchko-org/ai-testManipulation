@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результат квиза</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="card result-card {{ level_class }}">
+        <h1>Результат</h1>
+        <p class="score">{{ correct_count }} из {{ total }}</p>
+        <p class="percent">{{ percent }}%</p>
+        <p class="level">{{ level }}</p>
+
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ percent }}%"></div>
+        </div>
+
+        <form action="{{ url_for('restart') }}" method="post">
+            <button type="submit" class="btn btn-primary">Пройти ещё раз</button>
+        </form>
+    </div>
+
+    {% if review %}
+    <div class="card">
+        <h2>Разбор ответов</h2>
+        <div class="review-list">
+            {% for item in review %}
+            <div class="review-item {% if item.is_correct %}review-correct{% else %}review-wrong{% endif %}">
+                <p class="review-question">{{ item.question }}</p>
+                <p><strong>Твой ответ:</strong> {{ item.chosen_text }}</p>
+                <p><strong>Правильный ответ:</strong> {{ item.correct_text }}</p>
+                <p class="review-explanation">{{ item.explanation }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
