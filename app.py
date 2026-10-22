@@ -10,7 +10,13 @@ Flask-приложение: квиз по распознаванию манип�
 - В конце — результат и разбор ошибок.
 """
 
+import hmac
+import os
 import random
+import re
+import secrets
+import warnings
+
 from flask import (
     Flask,
     render_template,
@@ -21,6 +27,11 @@ from flask import (
     jsonify,
 )
 
+
+def _environment_flag(name):
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 # Импортируем банк вопросов. Ожидаем список словарей QUESTIONS.
 try:
     from questions import QUESTIONS
@@ -28,12 +39,78 @@ except ImportError:  # pragma: no cover
     QUESTIONS = []
 
 app = Flask(__name__)
-# Секретный ключ для подписи сессионных cookie.
-# В продакшене замените на случайную строку из переменной окружения.
-app.secret_key = "change-me-to-a-random-secret-key"
+app.config.update(
+    SECRET_KEY=os.environ.get("FLASK_SECRET_KEY") or None,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=_environment_flag("FLASK_SESSION_COOKIE_SECURE"),
+    MAX_CONTENT_LENGTH=16 * 1024,
+)
 
 # Сколько вопросов задаётся за одну сессию.
 SESSION_SIZE = 30
+SESSION_ENDPOINTS = {"index", "start", "question", "next_question", "result", "restart"}
+POST_ENDPOINTS = {"start", "question", "next_question", "restart"}
+CSRF_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9_-]{43}\Z")
+
+
+def _well_formed_csrf_token(value):
+    return (
+        isinstance(value, str)
+        and value.isascii()
+        and CSRF_TOKEN_PATTERN.fullmatch(value) is not None
+    )
+
+
+def get_csrf_token():
+    token = session.get("csrf_token")
+    if not _well_formed_csrf_token(token):
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+@app.context_processor
+def inject_csrf_token():
+    if request.endpoint in SESSION_ENDPOINTS:
+        return {"csrf_token": get_csrf_token()}
+    return {}
+
+
+@app.before_request
+def require_session_secret():
+    if request.endpoint in SESSION_ENDPOINTS and not app.secret_key:
+        return (
+            "Сервер не настроен: задайте FLASK_SECRET_KEY.\n",
+            503,
+            {"Content-Type": "text/plain; charset=utf-8"},
+        )
+    if request.method == "POST" and request.endpoint in POST_ENDPOINTS:
+        tokens = request.form.getlist("csrf_token")
+        expected = session.get("csrf_token")
+        if (
+            len(tokens) != 1
+            or not _well_formed_csrf_token(expected)
+            or not _well_formed_csrf_token(tokens[0])
+        ):
+            return (
+                "Неверный CSRF-токен.\n",
+                403,
+                {"Content-Type": "text/plain; charset=utf-8"},
+            )
+        if not hmac.compare_digest(tokens[0], expected):
+            return (
+                "Неверный CSRF-токен.\n",
+                403,
+                {"Content-Type": "text/plain; charset=utf-8"},
+            )
+
+
+@app.after_request
+def disable_html_caching(response):
+    if response.mimetype == "text/html":
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def normalize_questions(raw_questions):
@@ -287,4 +364,10 @@ def api_questions():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    if not app.secret_key:
+        app.secret_key = secrets.token_urlsafe(48)
+        warnings.warn(
+            "FLASK_SECRET_KEY is unset; direct local run uses an ephemeral session key.",
+            RuntimeWarning,
+        )
+    app.run(debug=False, host="127.0.0.1", port=5000)

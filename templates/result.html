@@ -19,6 +19,7 @@
         </div>
 
         <form action="{{ url_for('restart') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn btn-primary">Пройти ещё раз</button>
         </form>
     </div>

@@ -21,6 +21,7 @@
         {% endif %}
 
         <form action="{{ url_for('question') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="options">
                 {% for option in q.options %}
                     <label class="option">
