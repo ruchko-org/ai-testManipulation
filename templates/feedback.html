@@ -42,6 +42,7 @@
         </div>
 
         <form action="{{ url_for('next_question') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn btn-primary">Дальше →</button>
         </form>
     </div>

@@ -35,23 +35,55 @@
 ## Установка и запуск
 
 ```bash
-# 1. Создать виртуальное окружение (по желанию)
-python3 -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+# Создать и активировать виртуальное окружение
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
-# 2. Установить зависимости
+# Установить зависимости
 pip install -r requirements.txt
 
-# 3. Запустить приложение
+# Для постоянного ключа в локальной разработке
+export FLASK_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+
+# Запустить приложение
 python app.py
 ```
 
 Открой в браузере: http://127.0.0.1:5000
 
-## Настройка
+При прямом запуске без `FLASK_SECRET_KEY` приложение создаёт временный ключ и предупреждает об этом.
+После перезапуска такой ключ меняется. WSGI-сервер без настроенного ключа отвечает `503` на страницах, использующих сессию.
 
-- `SESSION_SIZE` в `app.py` — сколько вопросов задаётся за одно прохождение (по умолчанию 30).
-- `app.secret_key` — замените на случайную строку перед публикацией.
+## Production
+
+Задай постоянный `FLASK_SECRET_KEY` через защищённую конфигурацию сервера или менеджер секретов.
+Используй одно и то же значение для всех WSGI workers. Не добавляй ключ в репозиторий.
+
+При работе по HTTPS включи защищённую cookie:
+
+```bash
+FLASK_SESSION_COOKIE_SECURE=true
+```
+
+Для production используй WSGI-сервер, например Gunicorn, за HTTPS reverse proxy. Установи Gunicorn отдельно от зависимостей приложения, затем запусти:
+
+```bash
+gunicorn --workers 2 --bind 127.0.0.1:8000 app:app
+```
+
+Установи `FLASK_SECRET_KEY` и `FLASK_SESSION_COOKIE_SECURE=true` в окружении systemd или WSGI-сервера.
+Для локального HTTP оставь `FLASK_SESSION_COOKIE_SECURE` выключенным.
+
+`SESSION_SIZE` в `app.py` задаёт число вопросов за прохождение; по умолчанию — 30.
+
+## Тесты
+
+Тесты используют стандартный `unittest` и Flask test client:
+
+```bash
+python -m pip install Flask==3.1.3 Werkzeug==3.1.9
+python -m unittest discover -s tests -v
+```
 
 ## Проверка API
 
